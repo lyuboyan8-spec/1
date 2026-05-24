@@ -45,12 +45,14 @@ npm run check
 - Web app root: `apps/web`
 - Runtime: `Next.js 15 + React 19 + TypeScript 5`
 - 当前主系统部署目标: `Cloudflare Workers`
-- Root directory: `apps/web`
-- Build command: `npm run build`
+- Repository root directory for CI/build entry: `/workspace/phantom-digital-human`
+- Source app root directory: `apps/web`
+- Build command: `npm run web:build`
+- Static output directory produced by current app build: `apps/web/out`
 - Worker config: `deploy/cloudflare/wrangler.jsonc`
 - Node.js: `22`
 
-当前主系统默认由 `deploy/cloudflare/wrangler.jsonc` 对应的 `Cloudflare Workers` 作为正式边缘入口；`apps/web` 的静态导出仅用于当前官网骨架与后续纯静态 marketing 子站特例，不得写成主系统默认部署方案。
+当前主系统默认由 `deploy/cloudflare/wrangler.jsonc` 对应的 `Cloudflare Workers` 作为正式边缘入口。`apps/web` 当前仍会产出 `apps/web/out` 作为最小静态构建结果，但该输出只用于当前 GitHub 空仓交付与后续纯静态 marketing 子站特例，不得写成主系统默认部署方案。
 
 `npm run validate` 与 `npm run check` 会同时校验以下冻结约束：
 
