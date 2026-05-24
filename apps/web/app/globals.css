@@ -1,0 +1,207 @@
+@import "tailwindcss";
+
+:root {
+  --font-body: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --font-display: "Avenir Next", "Helvetica Neue", "Segoe UI", sans-serif;
+  --surface: #f7f3ea;
+  --surface-strong: #efe6d3;
+  --panel: rgba(29, 46, 58, 0.92);
+  --panel-border: rgba(241, 198, 98, 0.22);
+  --ink: #10212e;
+  --ink-soft: #3f5564;
+  --accent: #c96d22;
+  --accent-strong: #8f3b11;
+  --signal: #f1c662;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(circle at top, rgba(201, 109, 34, 0.16), transparent 34%),
+    linear-gradient(180deg, #fcfaf5 0%, var(--surface) 48%, #efe6d3 100%);
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-body), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.hero-shell,
+.content-shell,
+.subpage-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.hero-shell {
+  padding: 72px 0 32px;
+}
+
+.hero-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.hero-copy h1,
+.section-heading h2,
+.subpage-shell h1,
+.plan-card h3 {
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: -0.04em;
+}
+
+.hero-copy h1 {
+  margin: 0 0 16px;
+  font-size: clamp(2.8rem, 7vw, 5.8rem);
+  line-height: 0.98;
+}
+
+.lede,
+.hero-panel li,
+.plan-card p,
+.architecture-item,
+.subpage-shell p {
+  color: var(--ink-soft);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+.eyebrow,
+.panel-kicker,
+.plan-code {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.eyebrow,
+.plan-code {
+  color: var(--accent-strong);
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.cta-primary,
+.cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.cta-primary {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: #fff8f2;
+}
+
+.cta-secondary {
+  border: 1px solid rgba(16, 33, 46, 0.14);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.hero-panel {
+  padding: 24px;
+  border: 1px solid var(--panel-border);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
+    var(--panel);
+  box-shadow: 0 24px 80px rgba(16, 33, 46, 0.18);
+}
+
+.hero-panel .panel-kicker,
+.hero-panel li {
+  color: #f8ecd1;
+}
+
+.hero-panel ul,
+.command-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.content-shell {
+  padding: 40px 0;
+}
+
+.section-heading {
+  margin-bottom: 18px;
+}
+
+.section-heading h2,
+.subpage-shell h1 {
+  margin: 8px 0 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.plan-grid,
+.architecture-list {
+  display: grid;
+  gap: 16px;
+}
+
+.plan-card,
+.architecture-item,
+.subpage-shell {
+  border: 1px solid rgba(16, 33, 46, 0.1);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 12px 40px rgba(16, 33, 46, 0.08);
+}
+
+.plan-card {
+  padding: 24px;
+}
+
+.plan-card h3 {
+  margin: 8px 0;
+  font-size: 1.6rem;
+}
+
+.plan-value {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.architecture-item {
+  padding: 18px 20px;
+}
+
+.subpage-shell {
+  width: min(820px, calc(100% - 32px));
+  margin: 48px auto;
+  padding: 28px;
+}
+
+code {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+@media (min-width: 900px) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.8fr);
+    align-items: start;
+  }
+
+  .plan-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "phantom-digital-human",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Deployment execution monorepo skeleton for 幻影数字人",
+  "packageManager": "pnpm@10.0.0",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "bootstrap": "bash ./infra/scripts/bootstrap.sh",
+    "check": "bash ./infra/scripts/check.sh",
+    "validate": "node ./tools/validate-guardrails.mjs",
+    "web:dev": "npm run dev --workspace @phantom/web",
+    "web:build": "npm run build --workspace @phantom/web",
+    "web:lint": "npm run lint --workspace @phantom/web",
+    "web:typecheck": "npm run typecheck --workspace @phantom/web"
+  }
+}

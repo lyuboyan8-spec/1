@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "phantom-digital-human-edge",
+  "main": "src/edge-entry.ts",
+  "compatibility_date": "2026-05-24",
+  "workers_dev": false,
+  "observability": {
+    "enabled": true
+  }
+}

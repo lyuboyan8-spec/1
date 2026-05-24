@@ -1,0 +1,745 @@
+{
+  "schema": "wanman.deployment-manifest",
+  "version": 1,
+  "product": {
+    "name": "幻影数字人",
+    "slug": "phantom-digital-human",
+    "kind": "service_bundle",
+    "stage": "stage_4_productionization",
+    "environment": "cloud_production",
+    "release_channel": "saas"
+  },
+  "stage_model": {
+    "current": "stage_4_productionization",
+    "allowed_values": [
+      "stage_1_platform_foundation",
+      "stage_2_adapter_enablement",
+      "stage_3_console_and_director",
+      "stage_4_productionization"
+    ],
+    "release_policy": {
+      "stage_1_platform_foundation": {
+        "allowed_environments": [
+          "local_development"
+        ],
+        "production_manifest_allowed": false
+      },
+      "stage_2_adapter_enablement": {
+        "allowed_environments": [
+          "local_development",
+          "single_gpu_validation"
+        ],
+        "production_manifest_allowed": false
+      },
+      "stage_3_console_and_director": {
+        "allowed_environments": [
+          "local_development",
+          "single_gpu_validation"
+        ],
+        "production_manifest_allowed": false
+      },
+      "stage_4_productionization": {
+        "allowed_environments": [
+          "local_development",
+          "single_gpu_validation",
+          "cloud_production"
+        ],
+        "production_manifest_allowed": true
+      }
+    }
+  },
+  "environment_model": {
+    "current": "cloud_production",
+    "allowed_values": [
+      "local_development",
+      "single_gpu_validation",
+      "cloud_production"
+    ],
+    "topology": {
+      "local_development": "docker_compose_control_plane",
+      "single_gpu_validation": "single_gpu_workstation_validation",
+      "cloud_production": "kubernetes_cpu_gpu_split_with_cloudflare"
+    }
+  },
+  "governance": {
+    "public_api_prefix": "/api/v1",
+    "allowed_plans": [
+      "free_trial",
+      "professional",
+      "enterprise"
+    ],
+    "billing_truth_source_service": "billing-service",
+    "frontend_open_source_direct_access_allowed": false
+  },
+  "runtime": {
+    "control_plane": "nodejs22",
+    "realtime_plane": "go1.23",
+    "engine_plane": "python3.11"
+  },
+  "services": [
+    {
+      "name": "api-gateway",
+      "kind": "control-plane",
+      "runtime": "nodejs22",
+      "entrypoint": "pnpm --filter api-gateway start",
+      "port": 8080,
+      "scaling": {
+        "min_replicas": 2,
+        "max_replicas": 6
+      },
+      "resources": {
+        "cpu": "500m",
+        "memory": "512Mi"
+      }
+    },
+    {
+      "name": "bff-console",
+      "kind": "control-plane",
+      "runtime": "nodejs22",
+      "entrypoint": "pnpm --filter bff-console start",
+      "port": 8081,
+      "scaling": {
+        "min_replicas": 2,
+        "max_replicas": 4
+      },
+      "resources": {
+        "cpu": "500m",
+        "memory": "512Mi"
+      }
+    },
+    {
+      "name": "billing-service",
+      "kind": "control-plane",
+      "runtime": "nodejs22",
+      "entrypoint": "pnpm --filter billing-service start",
+      "port": 8082,
+      "scaling": {
+        "min_replicas": 2,
+        "max_replicas": 4
+      },
+      "resources": {
+        "cpu": "500m",
+        "memory": "512Mi"
+      }
+    },
+    {
+      "name": "liveops-service",
+      "kind": "business-plane",
+      "runtime": "nodejs22",
+      "entrypoint": "pnpm --filter liveops-service start",
+      "port": 8083,
+      "scaling": {
+        "min_replicas": 2,
+        "max_replicas": 4
+      },
+      "resources": {
+        "cpu": "750m",
+        "memory": "768Mi"
+      }
+    },
+    {
+      "name": "media-gateway",
+      "kind": "realtime-plane",
+      "runtime": "go1.23",
+      "entrypoint": "./media-gateway",
+      "port": 9000,
+      "scaling": {
+        "min_replicas": 2,
+        "max_replicas": 6
+      },
+      "resources": {
+        "cpu": "1000m",
+        "memory": "1Gi"
+      }
+    },
+    {
+      "name": "avatar-render-service",
+      "kind": "engine-plane",
+      "runtime": "python3.11",
+      "entrypoint": "uvicorn app.main:app --host 0.0.0.0 --port 7000",
+      "port": 7000,
+      "scaling": {
+        "min_replicas": 1,
+        "max_replicas": 3
+      },
+      "resources": {
+        "cpu": "2000m",
+        "memory": "4Gi",
+        "gpu": "1"
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "postgresql16",
+      "kind": "database",
+      "required": true
+    },
+    {
+      "name": "redis7.2",
+      "kind": "cache",
+      "required": true
+    },
+    {
+      "name": "nats-jetstream",
+      "kind": "event-bus",
+      "required": true
+    },
+    {
+      "name": "temporal1.26",
+      "kind": "workflow",
+      "required": true
+    },
+    {
+      "name": "s3-or-r2",
+      "kind": "object-storage",
+      "required": true
+    },
+    {
+      "name": "opensearch",
+      "kind": "log-search",
+      "required": false
+    }
+  ],
+  "env_bindings": [
+    {
+      "name": "APP_ENV",
+      "scope": "all-services",
+      "required": true,
+      "sensitivity": "public",
+      "source": "config"
+    },
+    {
+      "name": "DATABASE_URL",
+      "scope": "control-plane",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "REDIS_URL",
+      "scope": "control-plane",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "NATS_URL",
+      "scope": "workflow-and-realtime",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "TEMPORAL_ADDRESS",
+      "scope": "workflow-and-realtime",
+      "required": true,
+      "sensitivity": "internal",
+      "source": "config"
+    },
+    {
+      "name": "S3_BUCKET",
+      "scope": "asset-services",
+      "required": true,
+      "sensitivity": "internal",
+      "source": "config"
+    },
+    {
+      "name": "S3_ACCESS_KEY_ID",
+      "scope": "asset-services",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "S3_SECRET_ACCESS_KEY",
+      "scope": "asset-services",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "SESSION_SECRET",
+      "scope": "auth-and-bff",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "PAYMENT_WEBHOOK_SECRET",
+      "scope": "billing-service",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "WEBHOOK_SIGNING_SECRET",
+      "scope": "developer-platform",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "OTEL_EXPORTER_OTLP_ENDPOINT",
+      "scope": "all-services",
+      "required": true,
+      "sensitivity": "internal",
+      "source": "config"
+    },
+    {
+      "name": "WEBRTC_PUBLIC_IP",
+      "scope": "media-gateway",
+      "required": true,
+      "sensitivity": "internal",
+      "source": "config"
+    },
+    {
+      "name": "TURN_URL",
+      "scope": "media-gateway",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "TURN_USERNAME",
+      "scope": "media-gateway",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "TURN_PASSWORD",
+      "scope": "media-gateway",
+      "required": true,
+      "sensitivity": "secret",
+      "source": "secret-manager"
+    },
+    {
+      "name": "MODEL_REGISTRY",
+      "scope": "engine-plane",
+      "required": true,
+      "sensitivity": "internal",
+      "source": "config"
+    },
+    {
+      "name": "ENABLE_FAY_ADAPTER",
+      "scope": "adapter-services",
+      "required": true,
+      "sensitivity": "internal",
+      "source": "config"
+    },
+    {
+      "name": "ENABLE_AI_XIAOPI",
+      "scope": "adapter-services",
+      "required": true,
+      "sensitivity": "internal",
+      "source": "config"
+    },
+    {
+      "name": "ENABLE_PERSONA_LIVE",
+      "scope": "adapter-services",
+      "required": true,
+      "sensitivity": "internal",
+      "source": "config"
+    },
+    {
+      "name": "ENABLE_LIVE_TALKING",
+      "scope": "adapter-services",
+      "required": true,
+      "sensitivity": "internal",
+      "source": "config"
+    }
+  ],
+  "domains": [
+    {
+      "hostname": "console.phantom-digital-human.example.com",
+      "purpose": "console",
+      "managed_by_cloudflare": true,
+      "approval_required": true
+    },
+    {
+      "hostname": "api.phantom-digital-human.example.com",
+      "purpose": "public-api",
+      "managed_by_cloudflare": true,
+      "approval_required": true
+    },
+    {
+      "hostname": "preview.phantom-digital-human.example.com",
+      "purpose": "preview-and-director",
+      "managed_by_cloudflare": true,
+      "approval_required": true
+    }
+  ],
+  "adapter_enablement_policy": {
+    "default_policy": "deny",
+    "allowed_environment_values": [
+      "local_development",
+      "single_gpu_validation",
+      "cloud_production"
+    ],
+    "adapters": [
+      {
+        "adapter": "fay",
+        "status": "saas_only_candidate",
+        "default_enabled": false,
+        "allowed_environments": [
+          "single_gpu_validation",
+          "cloud_production"
+        ],
+        "tenant_allowlist_required": true,
+        "commercial_default_allowed": false,
+        "private_deployment_allowed": false,
+        "degrade_to": "first_party_conversation_service"
+      },
+      {
+        "adapter": "ai_xiaopi",
+        "status": "reference_or_limited_adapter",
+        "default_enabled": false,
+        "allowed_environments": [
+          "single_gpu_validation",
+          "cloud_production"
+        ],
+        "tenant_allowlist_required": true,
+        "commercial_default_allowed": false,
+        "private_deployment_allowed": true,
+        "degrade_to": "platform_liveops_scheduler"
+      },
+      {
+        "adapter": "ai_vtuber_koischizo",
+        "status": "reference_or_limited_adapter",
+        "default_enabled": false,
+        "allowed_environments": [
+          "single_gpu_validation"
+        ],
+        "tenant_allowlist_required": true,
+        "commercial_default_allowed": false,
+        "private_deployment_allowed": true,
+        "degrade_to": "platform_preview_shell"
+      },
+      {
+        "adapter": "persona_live",
+        "status": "legal_gated_experimental",
+        "default_enabled": false,
+        "allowed_environments": [
+          "single_gpu_validation"
+        ],
+        "tenant_allowlist_required": true,
+        "commercial_default_allowed": false,
+        "private_deployment_allowed": false,
+        "degrade_to": "static_emotion_pipeline"
+      },
+      {
+        "adapter": "live_talking",
+        "status": "legal_gated_experimental",
+        "default_enabled": false,
+        "allowed_environments": [
+          "single_gpu_validation"
+        ],
+        "tenant_allowlist_required": true,
+        "commercial_default_allowed": false,
+        "private_deployment_allowed": false,
+        "degrade_to": "basic_lipsync_pipeline"
+      },
+      {
+        "adapter": "ai_vtuber_ikaros_521",
+        "status": "prohibited",
+        "default_enabled": false,
+        "allowed_environments": [],
+        "tenant_allowlist_required": true,
+        "commercial_default_allowed": false,
+        "private_deployment_allowed": false,
+        "degrade_to": "none"
+      }
+    ]
+  },
+  "legal_gate_status": {
+    "overall": "restricted",
+    "blocking": true,
+    "legacy_gate_ref": "16b8c611",
+    "canonical_gate_ref": "LG-ROOT-20260524",
+    "last_reviewed_at": "2026-05-24",
+    "review_source": "security-engineer",
+    "adapters": [
+      {
+        "adapter": "fay",
+        "status": "restricted",
+        "reason_code": "gpl3_saas_only_candidate",
+        "evidence_ref": "/workspace/agents/security-engineer/output/open-source-compliance-gate-addendum-report.md",
+        "commercial_release_allowed": false
+      },
+      {
+        "adapter": "ai_xiaopi",
+        "status": "restricted",
+        "reason_code": "platform_capture_and_hardware_review_required",
+        "evidence_ref": "/workspace/agents/security-engineer/output/phantom-digital-human-legal-gate-closure-report.md",
+        "commercial_release_allowed": false
+      },
+      {
+        "adapter": "ai_vtuber_koischizo",
+        "status": "restricted",
+        "reason_code": "third_party_plugin_chain_unreviewed",
+        "evidence_ref": "/workspace/agents/security-engineer/output/phantom-digital-human-legal-gate-closure-report.md",
+        "commercial_release_allowed": false
+      },
+      {
+        "adapter": "persona_live",
+        "status": "blocked",
+        "reason_code": "academic_research_only_conflict",
+        "evidence_ref": "/workspace/agents/security-engineer/output/open-source-compliance-gate-addendum-report.md",
+        "commercial_release_allowed": false
+      },
+      {
+        "adapter": "live_talking",
+        "status": "blocked",
+        "reason_code": "rights_chain_incomplete_and_output_obligation_unclear",
+        "evidence_ref": "/workspace/agents/security-engineer/output/phantom-digital-human-legal-gate-closure-report.md",
+        "commercial_release_allowed": false
+      },
+      {
+        "adapter": "ai_vtuber_ikaros_521",
+        "status": "prohibited",
+        "reason_code": "gpl3_and_commercial_authorization_required",
+        "evidence_ref": "/workspace/agents/security-engineer/output/open-source-compliance-gate-addendum-report.md",
+        "commercial_release_allowed": false
+      }
+    ]
+  },
+  "private_deployment_exclusions": [
+    {
+      "adapter": "fay",
+      "status": "excluded_by_default",
+      "reason_code": "saas_only_candidate"
+    },
+    {
+      "adapter": "persona_live",
+      "status": "excluded",
+      "reason_code": "legal_gate_blocked"
+    },
+    {
+      "adapter": "live_talking",
+      "status": "excluded",
+      "reason_code": "rights_chain_incomplete_and_output_obligation_unclear"
+    },
+    {
+      "adapter": "ai_vtuber_ikaros_521",
+      "status": "prohibited",
+      "reason_code": "commercial_authorization_conflict"
+    }
+  ],
+  "paid_resource_policy": {
+    "introduces_paid_resources": true,
+    "human_approval_required": true,
+    "resources": [
+      {
+        "resource": "cloudflare_zone_and_waf",
+        "impact": "public_entrypoint_and_network_cost"
+      },
+      {
+        "resource": "kubernetes_gpu_node_pool",
+        "impact": "gpu_compute_cost"
+      },
+      {
+        "resource": "managed_postgresql_and_redis",
+        "impact": "stateful_runtime_cost"
+      },
+      {
+        "resource": "object_storage_and_egress",
+        "impact": "asset_storage_and_transfer_cost"
+      }
+    ],
+    "silent_deploy_forbidden": true
+  },
+  "cloudflare_boundary": {
+    "connection_ready": false,
+    "deployment_approval_granted": false,
+    "managed_capabilities": [
+      "dns",
+      "cdn",
+      "waf",
+      "access"
+    ],
+    "agent_may_describe": true,
+    "agent_may_execute_direct_changes": false,
+    "trusted_runner_required": true,
+    "human_decision_required_for": [
+      "first_account_or_zone_connection",
+      "new_or_changed_production_domain",
+      "public_traffic_cutover",
+      "waf_or_access_policy_change",
+      "paid_resource_change"
+    ]
+  },
+  "cloudflare_delivery": {
+    "selected_product": "workers",
+    "pages_selected": false,
+    "worker_config_path": "deploy/cloudflare/wrangler.jsonc",
+    "worker_entry_path": "deploy/cloudflare/src/edge-entry.ts",
+    "decision_reason": "production_topology_requires_edge_entry_routing_to_gateway_ingress_not_pages_site_hosting",
+    "host_routing": [
+      {
+        "hostname": "console.phantom-digital-human.example.com",
+        "origin_env": "CF_CONSOLE_ORIGIN"
+      },
+      {
+        "hostname": "api.phantom-digital-human.example.com",
+        "origin_env": "CF_API_ORIGIN"
+      },
+      {
+        "hostname": "preview.phantom-digital-human.example.com",
+        "origin_env": "CF_PREVIEW_ORIGIN"
+      }
+    ],
+    "environment_variable_names": [
+      "CF_EDGE_ENV",
+      "CF_DEFAULT_ORIGIN",
+      "CF_CONSOLE_ORIGIN",
+      "CF_API_ORIGIN",
+      "CF_PREVIEW_ORIGIN",
+      "CF_ALLOWED_HOSTS",
+      "CF_MAINTENANCE_MODE",
+      "CF_MAINTENANCE_TARGET",
+      "CF_BYPASS_TOKEN",
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_API_TOKEN"
+    ],
+    "github_pre_push_checks": [
+      "npm run validate",
+      "npm run check",
+      "node_json_parse_deploy_cloudflare_wrangler_jsonc",
+      "worker_entry_exists",
+      "cloudflare_variable_names_only_no_secret_values"
+    ],
+    "deployment_runner_policy": {
+      "human_connection_required": true,
+      "human_deployment_approval_required": true,
+      "trusted_runner_required": true
+    },
+    "rollback_controls": [
+      "CF_MAINTENANCE_MODE",
+      "CF_MAINTENANCE_TARGET",
+      "rollback_previous_worker_release",
+      "revert_domain_or_origin_cutover"
+    ]
+  },
+  "health_checks": [
+    {
+      "name": "public-api",
+      "target": "https://api.phantom-digital-human.example.com/api/v1/health",
+      "protocol": "http",
+      "timeout_seconds": 10,
+      "success_criteria": "http_200",
+      "required_for_release": true
+    },
+    {
+      "name": "billing-service",
+      "target": "http://billing-service:8082/health",
+      "protocol": "http",
+      "timeout_seconds": 10,
+      "success_criteria": "http_200_and_entitlement_snapshot_ready",
+      "required_for_release": true
+    },
+    {
+      "name": "media-gateway",
+      "target": "http://media-gateway:9000/healthz",
+      "protocol": "http",
+      "timeout_seconds": 10,
+      "success_criteria": "http_200",
+      "required_for_release": true
+    },
+    {
+      "name": "avatar-render-service",
+      "target": "http://avatar-render-service:7000/health",
+      "protocol": "http",
+      "timeout_seconds": 15,
+      "success_criteria": "http_200_and_gpu_ready",
+      "required_for_release": true
+    },
+    {
+      "name": "postgresql16",
+      "target": "postgresql://control-plane-db",
+      "protocol": "tcp",
+      "timeout_seconds": 5,
+      "success_criteria": "connect_ok",
+      "required_for_release": true
+    },
+    {
+      "name": "redis7.2",
+      "target": "redis://control-plane-cache",
+      "protocol": "tcp",
+      "timeout_seconds": 5,
+      "success_criteria": "connect_ok",
+      "required_for_release": true
+    },
+    {
+      "name": "nats-jetstream",
+      "target": "nats://event-bus",
+      "protocol": "tcp",
+      "timeout_seconds": 5,
+      "success_criteria": "connect_ok",
+      "required_for_release": true
+    },
+    {
+      "name": "temporal1.26",
+      "target": "temporal://workflow-cluster",
+      "protocol": "tcp",
+      "timeout_seconds": 5,
+      "success_criteria": "namespace_ready",
+      "required_for_release": true
+    }
+  ],
+  "release_guards": {
+    "overall": {
+      "status": "blocked",
+      "reason": "legal_gate_status.blocking=true and Cloudflare human approval not granted"
+    },
+    "stage_environment_alignment": {
+      "status": "passed",
+      "required": true
+    },
+    "api_prefix_guard": {
+      "status": "passed",
+      "required": true,
+      "expected_prefix": "/api/v1"
+    },
+    "billing_truth_source_guard": {
+      "status": "passed",
+      "required": true,
+      "expected_service": "billing-service"
+    },
+    "adapter_policy_guard": {
+      "status": "passed",
+      "required": true,
+      "default_policy": "deny"
+    },
+    "private_deployment_scope_valid": {
+      "status": "passed",
+      "required": true
+    },
+    "health_checks_defined": {
+      "status": "passed",
+      "required": true
+    },
+    "observability_guard": {
+      "status": "pending_runtime_validation",
+      "required": true
+    },
+    "rollback_readiness": {
+      "status": "pending_runtime_validation",
+      "required": true
+    },
+    "compliance_gate": {
+      "status": "blocked",
+      "required": true,
+      "legacy_gate_ref": "16b8c611",
+      "canonical_gate_ref": "LG-ROOT-20260524"
+    },
+    "cloudflare_human_approval": {
+      "status": "blocked",
+      "required": true
+    },
+    "paid_resource_approval": {
+      "status": "blocked",
+      "required": true
+    }
+  }
+}

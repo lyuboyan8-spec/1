@@ -1,0 +1,64 @@
+{
+  "product_name": "幻影数字人",
+  "product_slug": "phantom-digital-human",
+  "delivery_model": "saas_first_private_deployment_later",
+  "api": {
+    "public_prefix": "/api/v1",
+    "allowed_protocols": ["rest", "websocket", "webhook"]
+  },
+  "plans": ["free_trial", "professional", "enterprise"],
+  "billing": {
+    "truth_source_service": "billing-service",
+    "truth_domains": [
+      "subscriptions",
+      "entitlements",
+      "readonly_state",
+      "quota_guards"
+    ]
+  },
+  "adapter_enablement_policy": {
+    "default_policy": "deny",
+    "adapters": {
+      "fay": {
+        "status": "saas_only_candidate",
+        "default_enabled": false,
+        "private_deployment_allowed": false
+      },
+      "ai_xiaopi": {
+        "status": "reference_or_limited_adapter",
+        "default_enabled": false,
+        "private_deployment_allowed": true
+      },
+      "ai_vtuber_koischizo": {
+        "status": "reference_or_limited_adapter",
+        "default_enabled": false,
+        "private_deployment_allowed": true
+      },
+      "persona_live": {
+        "status": "legal_gated_experimental",
+        "default_enabled": false,
+        "private_deployment_allowed": false
+      },
+      "live_talking": {
+        "status": "legal_gated_experimental",
+        "default_enabled": false,
+        "private_deployment_allowed": false
+      },
+      "ai_vtuber_ikaros_521": {
+        "status": "prohibited",
+        "default_enabled": false,
+        "private_deployment_allowed": false
+      }
+    }
+  },
+  "stage_model": {
+    "current_stage": "stage_1_platform_foundation",
+    "allowed_environments": ["local_development"]
+  },
+  "compliance": {
+    "legacy_gate_ref": "16b8c611",
+    "canonical_gate_ref": "LG-ROOT-20260524",
+    "blocking": true,
+    "overall_status": "restricted"
+  }
+}
